@@ -21,6 +21,7 @@ async def handle_in_review_or_interview(
     user_service_response = await user_service.get_user_excel_from_db(user_id=user_id)
     if user_service_response is None:
         # Create new sheet & store in DB
+        logger.debug("Creating new sheet for user")
         excel_id, start_row = await sheets_service.create_new_sheet_for_user(
             authorization,
             user_id,
@@ -31,14 +32,13 @@ async def handle_in_review_or_interview(
             current_sheet_row=start_row,
             excel_id=excel_id
         )
-        # Apply formatting to the new sheet
-        await sheets_service.apply_new_sheet_formatting(authorization, excel_id)
-
+        
         row = start_row
     else:
         row = user_service_response["current_sheet_row"]
         excel_id = user_service_response["excel_id"]
 
+    logger.info(f"Row: {row}, Excel ID: {excel_id}")
     # 3) Update the sheet with the new row
     row_values = extract_row_values(response, summary_json)  # A helper that turns JobInformation -> list
     await sheets_service.update_google_sheets_row(
@@ -61,9 +61,6 @@ async def handle_in_review_or_interview(
         sheet_row=row
     )
 
-    # 5) Apply formatting to the sheet
-    if row == 2:  # Only apply formatting if this is the first row of data
-        await sheets_service.auto_resize_wrap_columns(authorization, excel_id)
 
 
 async def handle_offer_or_rejection(

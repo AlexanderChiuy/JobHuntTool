@@ -4,7 +4,11 @@ from typing import Dict, Tuple
 from config.logger import logger
 from config.sheets_format import *
 from models.email_summary import Status
-from services.format.sheet_formater import SheetFormatter
+from services.builders.sheets.google.sheet_formater import  GoogleSheetFormatter
+from services.builders.sheets.google.sheet_data import GoogleSheetDataBuilder
+
+
+
 
 async def create_new_sheet_for_user(
         authorization: str, 
@@ -32,18 +36,20 @@ async def create_new_sheet_for_user(
     excel_id = response["spreadsheetId"]
 
      # 2) insert header rows here by calling `update_sheet` 
-    header_data = {
-        "valueInputOption": "USER_ENTERED",
-        "data": [{
-            "range": f"{HEADER_COLUMNS[0]}1:{HEADER_COLUMNS[-1]}1",
-            "majorDimension": "ROWS",
-            "values": [HEADER_NAMES]
-        }]
-    }
+    header_data = GoogleSheetDataBuilder().update_row(
+        start_col=HEADER_COLUMNS[0],
+        end_col=HEADER_COLUMNS[-1],
+        row=1,
+        values=HEADER_NAMES
+    ).build()
+
+    
     await update_sheet(authorization, header_data, excel_id)
+
+    # 3) Apply formatting to the new sheet
     await apply_new_sheet_formatting(authorization, excel_id)
     await auto_resize_wrap_columns(authorization, excel_id)
-
+    
     # 3) Record spreadsheet ID in your DB
     start_row = 2  # We'll start adding data from row 2
     await save_user_info_to_db(user_id, start_row, excel_id)
@@ -74,14 +80,13 @@ async def update_google_sheets_row(
         None
     """
     # 2) Prepare the Sheets batchUpdate payload
-    sheets_data = {
-        "valueInputOption": "USER_ENTERED",
-        "data": [{
-            "range": f"{HEADER_COLUMNS[0]}{row}:{HEADER_COLUMNS[-1]}{row}",
-            "majorDimension": "ROWS",
-            "values": [row_values]  
-        }]
-    }
+    # 2) insert header rows here by calling `update_sheet` 
+    sheets_data = GoogleSheetDataBuilder().update_row(
+        start_col=HEADER_COLUMNS[0],
+        end_col=HEADER_COLUMNS[-1],
+        row=row,
+        values=row_values
+    ).build()
     # 3) Send update to Google Sheets
     await update_sheet(authorization, sheets_data, excel_id)
 
@@ -92,7 +97,7 @@ async def apply_new_sheet_formatting(
         sheet_id:int = 0
     ) -> None:
 
-    formatter = SheetFormatter(sheet_id)
+    formatter = GoogleSheetFormatter(sheet_id)
     batch_update_json = (
         formatter
         .clear_format() # Clear existing formatting to start fresh
@@ -137,10 +142,12 @@ async def apply_new_sheet_formatting(
                               batch_update_json,
                               spreadsheet_id)
 
+
 async def auto_resize_wrap_columns(
         authorization: str, 
         spreadsheet_id: str, 
-        sheet_id:int = 0
+        sheet_id:int = 0,
+        update :bool = False
     ) -> None:
     """
     Auto-resizes the columns of the Google Sheet to fit their content.
@@ -154,16 +161,16 @@ async def auto_resize_wrap_columns(
         None
     """
 
-    formatter = SheetFormatter(sheet_id)
+    formatter = GoogleSheetFormatter(sheet_id)
     batch_update_json = (
         formatter
         .set_column_width(
             0, 
-            HEADER_NAMES.index("STATUS")+1,  # Set width for all columns up to JOB_DESCRIPTION
-            pixel_size=85
+            HEADER_NAMES.index("SCORE")+1,  # Set width for all columns up to JOB_DESCRIPTION
+            pixel_size=100
         )
         .set_column_width(
-            HEADER_NAMES.index("JOB_DESCRIPTION"),  # Set width for the JOB_DESCRIPTION column
+            HEADER_NAMES.index("YEARS_OF_EXPERIENCE"),  # Set width for the JOB_DESCRIPTION column
             TABLE_SIZE_COLUMN,  # Set width for all columns after JOB_DESCRIPTION
             pixel_size=500 # Wider width for job description to accommodate more text
         )
@@ -171,7 +178,7 @@ async def auto_resize_wrap_columns(
             start_row=1, 
             end_row=TABLE_SIZE_ROW,
             start_col=0, 
-            end_col=HEADER_NAMES.index("STATUS")+1,  
+            end_col=HEADER_NAMES.index("SCORE")+1,  
             vertical_alignment="MIDDLE",  
             horizontal_alignment="CENTER", 
             font_size=12
@@ -179,22 +186,29 @@ async def auto_resize_wrap_columns(
         .wrap_and_allign_text(
             start_row=1,  # Start from the first row after the header
             end_row=TABLE_SIZE_ROW,  # End at the last row of the table
-            start_col=HEADER_NAMES.index("JOB_DESCRIPTION"),  # Start from the first column
+            start_col=HEADER_NAMES.index("YEARS_OF_EXPERIENCE"),  # Start from the first column
             end_col=TABLE_SIZE_COLUMN,
             vertical_alignment="TOP", 
             font_size=12
         )  # Resize all columns in the sheet
         .build()
     )
+   
     await update_sheet_format(authorization, batch_update_json, spreadsheet_id)
-
-async def update_status_column(authorization: str, user_id: str, excel_id:str, row:int, row_value: list):
+    
+async def update_status_column(
+        authorization: str, 
+        user_id: str, 
+        excel_id:str, 
+        row:int, 
+        row_values: list
+    ) -> None:
     sheets_data = {
         "valueInputOption": "USER_ENTERED",
         "data": [{
             "range": f"{HEADER_COLUMNS[HEADER_NAMES.index("STATUS")]}{row}",
                 "majorDimension": "ROWS",
-                "values": [row_value]
+                "values": [row_values]
         }]
     }
     res = await update_sheet(authorization, sheets_data, excel_id)
