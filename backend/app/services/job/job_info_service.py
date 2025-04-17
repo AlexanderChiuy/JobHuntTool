@@ -1,4 +1,3 @@
-
 from services.memory import memo_service
 from services.summary import crewai_table_service
 from models.create_table import JobInformation
@@ -8,7 +7,8 @@ from fastapi import HTTPException
 
 async def get_or_create_job_info(
     query_key: str, 
-    summary_json:GPT_Email_Summary_Response
+    summary_json:GPT_Email_Summary_Response,
+    resume: str
 ) -> JobInformation:
     """
     Returns a JobInformation object, either from memoized storage
@@ -24,13 +24,16 @@ async def get_or_create_job_info(
             raise HTTPException(status_code=500, detail="Response validation failed")
     else:
         # Otherwise, call CrewAI and store in memo
+        logger.info(f"Original resume length: {len(resume)}")
         inputs = {
             'company': summary_json.company,
             'job': summary_json.job_position,
             'summary': summary_json.summary,
-            "status": str(summary_json.status)
+            "status": str(summary_json.status),
+            "resume": resume
         }
         try:
             return await crewai_table_service.crewai_table(query_key=query_key, inputs=inputs)
         except Exception as e:
+            logger.error(f"ERROR RESPONSE: {e}")
             raise HTTPException(status_code=500, detail="Response validation failed")
