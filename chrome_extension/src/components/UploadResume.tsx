@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import DescriptionIcon from '@mui/icons-material/Description';
+import { getUserEmail } from '../chrome/utils';
 
 function UploadResume() {
   const [resume, setResume] = useState<File | null>(null);
-  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -14,25 +14,21 @@ function UploadResume() {
     }
   };
 
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEmail(e.target.value);
-  };
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     setSuccess(false);
-    if (!resume || !email) {
-      setError('Please provide both your email and resume file.');
+    if (!resume) {
+      setError('Please provide both your resume file.');
       return;
     }
     setLoading(true);
     const formData = new FormData();
     formData.append('resume', resume);
-    formData.append('email', email);
+    formData.append('userId', await getUserEmail());
 
     try {
-      const response = await fetch('/upload-resume', {
+      const response = await fetch('http://127.0.0.1:8080/upload/upload-resume', {
         method: 'POST',
         body: formData,
       });
@@ -42,7 +38,6 @@ function UploadResume() {
       }
       setSuccess(true);
       setResume(null);
-      setEmail('');
     } catch (err) {
       setError('An error occurred while uploading. Please try again.');
     } finally {
@@ -62,17 +57,6 @@ function UploadResume() {
         </p>
       </div>
       <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4">
-        <div>
-          <label className="block text-gray-700">Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={handleEmailChange}
-            placeholder="you@example.com"
-            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-            required
-          />
-        </div>
         <div>
           <label className="block text-gray-700">Resume</label>
           <input
