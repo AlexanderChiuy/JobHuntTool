@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import DescriptionIcon from '@mui/icons-material/Description';
 import { getUserEmail } from '../chrome/utils';
+import { Button } from '@mui/material';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import FileUploadInput from './FileUploadButton';
 
 function UploadResume() {
   const [resume, setResume] = useState<File | null>(null);
@@ -59,23 +62,26 @@ function UploadResume() {
       <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4">
         <div>
           <label className="block text-gray-700">Resume</label>
-          <input
-            type="file"
+          <FileUploadInput
             onChange={handleFileChange}
-            className="mt-1 block w-full text-gray-700"
+            fileName={resume?.name}
             accept=".pdf,.doc,.docx"
             required
           />
+          <p className="text-xs text-gray-500 mt-1">
+            Accepted formats: PDF, DOC, DOCX
+          </p>
         </div>
         {error && <p className="text-red-500">{error}</p>}
         {success && <p className="text-green-500">Resume uploaded successfully!</p>}
-        <button
+        <Button
           type="submit"
-          className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+          startIcon={<CloudUploadIcon />}
           disabled={loading}
         >
           {loading ? 'Uploading...' : 'Upload Resume'}
-        </button>
+        </Button>
       </form>
     </div>
   );
