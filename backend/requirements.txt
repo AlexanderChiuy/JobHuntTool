@@ -216,7 +216,7 @@ tomli==2.2.1
 tomli_w==1.2.0
 torch==2.6.0
 tqdm==4.67.1
-tomlkit==0.13.
+tomlkit==0.13.0
 traitlets==5.14.3
 transformers==4.50.0
 trio==0.29.0

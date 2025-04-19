@@ -50,7 +50,7 @@ function UploadJobLink() {
               Upload a Job Link
             </h1>
             <p className="text-gray-600">
-              By upload a job link, we will scrape the job descriptions and craft personalized interview guidance.
+              By uploading a job link, we will scrape the job descriptions and craft personalized interview guidance.
             </p>
           </div>
 
