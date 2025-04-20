@@ -20,6 +20,20 @@ async def get_summary_email(email: str):
     return await email_summary_service.email_summary(email)
 
 
+async def handle_email_content(summary_json, user_id: str, authorization: str):
+    match(summary_json.status): 
+        case Status.IN_REVIEW | Status.INTERVIEWING:
+            await job_status_service.handle_in_review_or_interview(summary_json,user_id, authorization)
+            return {"message": "Job info successfully updated"}
+        case Status.OFFER | Status.REJECTED:
+            msg = await job_status_service.handle_offer_or_rejection(summary_json, user_id, authorization)
+            return {"message": msg}
+        case Status.UNRELATED:
+            return {"message": "Job is unrelated to the application process"}
+        case _:
+            raise HTTPException(status_code=500, detail="Response validation failed")
+        
+
 @router.post("/company-job-info-crew-ai")
 async def get_company_job_info( email_id: str = Body(...), authorization: str = Header(...) ):
     logger.info("INFO CREW AI CALLED")
@@ -28,20 +42,9 @@ async def get_company_job_info( email_id: str = Body(...), authorization: str = 
     email_response = await email_service.get_email(authorization, email_id)
     user_id = email_response['payload']['headers'][0]['value']
     summary_json: GPT_Email_Summary_Response = await email_service.get_email_summary(email_response)
-
-    # Get resume summary
-    
     # Step 2: Process job application based on status using match-case
-    match(summary_json.status): 
-        case Status.IN_REVIEW | Status.INTERVIEWING:
-            await job_status_service.handle_in_review_or_interview(summary_json,user_id, authorization)
-            return {"message": "Job info successfully updated"}
+    return await handle_email_content(summary_json, user_id, authorization)
 
-        case Status.OFFER | Status.REJECTED:
-            msg = await job_status_service.handle_offer_or_rejection(summary_json, user_id, authorization)
-            return {"message": msg}
-        case _:
-            raise HTTPException(status_code=500, detail="Response validation failed")
         
 @router.post("/company-job-url-crew-ai")
 async def get_company_job_url(user_id: str = Body(...), job_post_url: str = Body(...), authorization: str = Header(...)):
@@ -51,6 +54,5 @@ async def get_company_job_url(user_id: str = Body(...), job_post_url: str = Body
     # Use job posting content as the "email"
     summary_json: GPT_Email_Summary_Response = await email_summary_service.email_summary(scraped_response)
 
-    # Assume the user is in the Interviewing phase
-    await job_status_service.handle_in_review_or_interview(summary_json,user_id, authorization)
-    return {"message": "Job info successfully updated"}
+    return await handle_email_content(summary_json, user_id, authorization)
+
