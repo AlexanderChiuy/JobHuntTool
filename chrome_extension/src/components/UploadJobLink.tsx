@@ -3,17 +3,15 @@ import LinkIcon from '@mui/icons-material/Link';
 import { Button } from '@mui/material';
 import { useState } from 'react';
 import { getAuthToken } from '../chrome/utils';
-import { useRootContext } from '../context/RootContext';
 
-const submitURL = async (url: string, user_id: string) => {
+const submitURL = async (url: string) => {
   const token = await getAuthToken();
-  const userInfo = await fetch(
+  await fetch(
       `http://127.0.0.1:8080/company/company-job-url-crew-ai`,
       {
           method: "POST",
           body: JSON.stringify({
-            "job_post_url": url,
-            "user_id": user_id
+            "job_post_url": url
           }),
           headers: {
               "Content-Type": 'application/json',
@@ -21,24 +19,15 @@ const submitURL = async (url: string, user_id: string) => {
           },
       }
   );
-
-  const userObject = await userInfo.json();
-  console.log("userObject", userObject);
-  return userObject;
 }
 
 function UploadJobLink() {
     const [inputValue, setInputValue] = useState('');
-    const userInfo = useRootContext();
-    const handleSubmit = (e: React.FormEvent) => {
+
+    const handleSubmit = (e: React.FormEvent) =>{
         console.log('Submitting...');
         e.preventDefault();
-        console.log('Submitted:', inputValue);
-        if (userInfo) {
-          submitURL(inputValue, userInfo.user_id);
-        } else {
-          console.log('User info invalid; Skipping');
-        }
+        submitURL(inputValue);
         setInputValue('');
     };
 
@@ -73,7 +62,7 @@ function UploadJobLink() {
                       <span>Upload</span>
                   </Button>
                 </form>
-            </div>
+          </div>
         </div>
     );
 }

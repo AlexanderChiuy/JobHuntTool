@@ -9,7 +9,7 @@ const getUserInfo = async () => {
   const userEmail = await getUserEmail();
   const token = await getAuthToken();
   const userInfo = await fetch(
-      `http://127.0.0.1:8080/user/get-user-excel?user_id=${userEmail}`,
+      `http://127.0.0.1:8080/user/get-user-excel`,
       {
           method: "GET",
           headers: {
