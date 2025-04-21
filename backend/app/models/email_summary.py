@@ -6,6 +6,7 @@ class Status(Enum):
     INTERVIEWING = "Interview"
     OFFER = "Offer"
     REJECTED = "Rejected"
+    UNRELATED = "Unrelated"
 
 
 class Email_Summary_Request(BaseModel):

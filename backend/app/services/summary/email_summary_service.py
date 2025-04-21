@@ -12,8 +12,10 @@ async def email_summary(email:str) -> GPT_Email_Summary_Response:
              
              The email content is provided here: {email}. 
              
-            
-             
+             Make sure to ensure if the email is referencing a job application or a job offer or  a job rejection
+
+             If the job is unrelated to those topics, please return the status as unrelated.
+
              Return a JSON schema with the following keys: 
 
              {{
@@ -21,7 +23,7 @@ async def email_summary(email:str) -> GPT_Email_Summary_Response:
                 "company": **insert company name here**,
                 "job_position": **insert job position here**,
                 "summary": **insert summary here**
-                "status": **insert Enum One of: InReview, Interviewing, Offer, Rejected**
+                "status": **insert Enum One of: InReview, Interviewing, Offer, Rejected, Unrelated**
             }}
             """
     messages = [
