@@ -1,13 +1,14 @@
-from config.logger import logger
 from services.sheets.sheets_service import create_new_sheet_for_user
-from fastapi import APIRouter, HTTPException, Request
-from models.user import UserAndExcelId
+from fastapi import APIRouter, HTTPException, Request, Depends
 from services.user.user_service import save_user_info_to_db, get_user_excel_from_db, delete_user_info_from_db
+from auth.verification import verify_google_token
 
 router = APIRouter()
 
 @router.post("/save-user-info")
-async def save_user_info(user_info: UserAndExcelId):
+async def save_user_info(req: Request, auth_data: dict = Depends(verify_google_token)):
+    body = await req.json()
+    user_info = body.get("user_info")
     try:
         # save should start at row 2.
         await save_user_info_to_db(user_info.user_id, 2, user_info.excel_id)
@@ -16,7 +17,8 @@ async def save_user_info(user_info: UserAndExcelId):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/get-user-excel")
-async def get_user_excel(req: Request, user_id: str):
+async def get_user_excel(req: Request, auth_data: dict = Depends(verify_google_token)):
+    user_id = auth_data.get("email") # email is our user_id
     result = await get_user_excel_from_db(user_id)
     if result is None:
         # if no excel sheet found. Create one for the user and set this up.
@@ -26,7 +28,8 @@ async def get_user_excel(req: Request, user_id: str):
     return result
 
 @router.delete("/delete-user-info")
-async def delete_user_info(user_id: str):
+async def delete_user_info(auth_data: dict = Depends(verify_google_token)):
+    user_id = auth_data.get("email")
     success = await delete_user_info_from_db(user_id)
     if not success:
         raise HTTPException(status_code=404, detail="User not found")

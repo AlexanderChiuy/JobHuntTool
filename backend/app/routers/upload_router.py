@@ -1,21 +1,18 @@
 # upload_router.py
-import base64
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from services.interview.insert_resume import insert_resume
 from services.interview.resume_parser import extract_resume_text
-from services.interview.summarize import summarize_resume, summarize_job_details  # Your summarization service
-from services.interview.extract_job import extract_job_description_trafilatura
-from services.interview.generate_question import generate_interview_question
 from utils.text_cleaner import clean_resume_text
+from auth.verification import verify_google_token
 
 router = APIRouter()
 
 @router.post("/upload-resume")
 async def upload_resume(
     resume: UploadFile = File(...),
-    userId: str = Form(...),
+    auth_data: dict = Depends(verify_google_token)
 ):
-
+    userId = auth_data.get("email")
     allowed_extensions = {"pdf", "doc", "docx"}
     filename = resume.filename
     extension = filename.split('.')[-1].lower()

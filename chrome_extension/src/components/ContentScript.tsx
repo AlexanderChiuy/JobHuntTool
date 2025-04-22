@@ -6,18 +6,23 @@ console.log("Content script loaded as module.");
 const handleFetchEmail = async (emailId: string) => {
   try {
     const token = await getAuthToken();
-
     const spreadsheetUpdateResponse = await fetch(
         'http://127.0.0.1:8080/company/company-job-info-crew-ai',
         {
             method: "POST",
             headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`
             },
-            body: JSON.stringify(emailId)
+            body: JSON.stringify({
+              "email_id": emailId
+            })
         }
     );
+
+    if (!spreadsheetUpdateResponse.ok) {
+      throw Error(await spreadsheetUpdateResponse.text());
+    }
   } catch (error: any) {
     console.error("Error fetching email summary:", error.message);
   }

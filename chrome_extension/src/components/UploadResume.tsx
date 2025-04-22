@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import DescriptionIcon from '@mui/icons-material/Description';
-import { getUserEmail } from '../chrome/utils';
 import { Button } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import FileUploadInput from './FileUploadButton';
+import { getAuthToken } from '../chrome/utils';
 
 function UploadResume() {
   const [resume, setResume] = useState<File | null>(null);
@@ -28,12 +28,15 @@ function UploadResume() {
     setLoading(true);
     const formData = new FormData();
     formData.append('resume', resume);
-    formData.append('userId', await getUserEmail());
 
     try {
+      const token = await getAuthToken();
       const response = await fetch('http://127.0.0.1:8080/upload/upload-resume', {
         method: 'POST',
         body: formData,
+        headers: {
+            "Authorization": `Bearer ${token}`
+        }
       });
 
       if (!response.ok) {

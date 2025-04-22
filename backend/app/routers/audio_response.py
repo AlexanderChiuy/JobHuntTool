@@ -1,10 +1,10 @@
 # audio_feedback_router.py
 import os
-import tempfile
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from dotenv import load_dotenv
 from openai import OpenAI  # Using the new client interface
 from services.interview.audio_feedback_service import process_audio_feedback
+from auth.verification import verify_google_token
 
 router = APIRouter()
 load_dotenv()
@@ -13,7 +13,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 @router.post("/audio-feedback")
-async def audio_feedback(audio_response: UploadFile = File(...)):
+async def audio_feedback(audio_response: UploadFile = File(...), auth_data: dict = Depends(verify_google_token)):
     try:
         # Read the uploaded audio content
         content = await audio_response.read()

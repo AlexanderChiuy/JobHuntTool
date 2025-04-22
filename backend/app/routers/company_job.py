@@ -1,22 +1,20 @@
-import json
 from services.job import job_url_service
-from services.tools.web_scraper_tool import WebScrapperTool
-from models.create_table import JobInformation
-from fastapi import APIRouter, HTTPException, Header, Body
-from services.clients.perplexity_client import PerplexityClient 
+from fastapi import APIRouter, HTTPException, Depends, Request
 from config.keys import PERPLEXITY_API_KEY
 from models.email_summary import GPT_Email_Summary_Response, Status
-from utils.helpers import string_to_json
 from services.summary import email_summary_service
 from services.job import job_status_service
 from config.logger import logger
 from services.email import email_service
+from auth.verification import verify_google_token
 
 # set up logger 
 router = APIRouter() 
 
 @router.get("/email-summary")
-async def get_summary_email(email: str):
+async def get_summary_email(req: Request, auth_data: dict = Depends(verify_google_token)):
+    body = await req.json()
+    email = body.get("email")
     return await email_summary_service.email_summary(email)
 
 
@@ -35,9 +33,11 @@ async def handle_email_content(summary_json, user_id: str, authorization: str):
         
 
 @router.post("/company-job-info-crew-ai")
-async def get_company_job_info( email_id: str = Body(...), authorization: str = Header(...) ):
+async def get_company_job_info(req: Request, auth_data: dict = Depends(verify_google_token)):
     logger.info("INFO CREW AI CALLED")
-    
+    body = await req.json()
+    email_id = body.get("email_id")
+    authorization = req.headers.get("authorization")
     # Step 1: Get email content
     email_response = await email_service.get_email(authorization, email_id)
     user_id = email_response['payload']['headers'][0]['value']
@@ -47,9 +47,11 @@ async def get_company_job_info( email_id: str = Body(...), authorization: str = 
 
         
 @router.post("/company-job-url-crew-ai")
-async def get_company_job_url(user_id: str = Body(...), job_post_url: str = Body(...), authorization: str = Header(...)):
+async def get_company_job_url(req: Request, auth_data: dict = Depends(verify_google_token)):
     logger.info("INFO CREW AI CALLED")
-
+    body = await req.json()
+    job_post_url = body.get("job_post_url")
+    user_id = auth_data.get("email")
     scraped_response = job_url_service.get_job_link_info(job_post_url)
     # Use job posting content as the "email"
     summary_json: GPT_Email_Summary_Response = await email_summary_service.email_summary(scraped_response)
