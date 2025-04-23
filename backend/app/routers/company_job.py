@@ -18,15 +18,21 @@ async def get_summary_email(req: Request, auth_data: dict = Depends(verify_googl
     return await email_summary_service.email_summary(email)
 
 
-async def handle_email_content(summary_json, user_id: str, authorization: str):
+async def handle_email_content(
+        summary_json, 
+        user_id: str, 
+        authorization: str,
+        email_id: str = None,
+    ):
     match(summary_json.status): 
         case Status.IN_REVIEW | Status.INTERVIEWING:
-            await job_status_service.handle_in_review_or_interview(summary_json,user_id, authorization)
+            await job_status_service.handle_in_review_or_interview(summary_json,user_id, authorization, email_id)
             return {"message": "Job info successfully updated"}
         case Status.OFFER | Status.REJECTED:
-            msg = await job_status_service.handle_offer_or_rejection(summary_json, user_id, authorization)
+            msg = await job_status_service.handle_offer_or_rejection(summary_json, user_id, authorization, email_id)
             return {"message": msg}
         case Status.UNRELATED:
+            logger.info("Job is unrelated to the application process")
             return {"message": "Job is unrelated to the application process"}
         case _:
             raise HTTPException(status_code=500, detail="Response validation failed")
@@ -43,7 +49,7 @@ async def get_company_job_info(req: Request, auth_data: dict = Depends(verify_go
     user_id = email_response['payload']['headers'][0]['value']
     summary_json: GPT_Email_Summary_Response = await email_service.get_email_summary(email_response)
     # Step 2: Process job application based on status using match-case
-    return await handle_email_content(summary_json, user_id, authorization)
+    return await handle_email_content(summary_json, user_id, authorization, email_id)
 
         
 @router.post("/company-job-url-crew-ai")
@@ -55,6 +61,7 @@ async def get_company_job_url(req: Request, auth_data: dict = Depends(verify_goo
     scraped_response = job_url_service.get_job_link_info(job_post_url)
     # Use job posting content as the "email"
     summary_json: GPT_Email_Summary_Response = await email_summary_service.email_summary(scraped_response)
-
-    return await handle_email_content(summary_json, user_id, authorization)
+    # Step 2: Process job application based on status using match-case
+    authorization = req.headers.get("authorization")
+    return await handle_email_content(summary_json, user_id, authorization, email_id=None)
 

@@ -10,20 +10,22 @@ async def email_summary(email:str) -> GPT_Email_Summary_Response:
     query  = f"""
             Provide a summary of the email and also extract the job and company from the email. 
              
-             The email content is provided here: {email}. 
+             The email/job description content is provided here: {email}. 
              
-             Make sure to ensure if the email is referencing a job application or a job offer or  a job rejection
+             Make sure to ensure if the email/job description is referencing a job application or a job offer or  a job rejection
+                or a job unrelated topic outside jobs.
 
-             If the job is unrelated to those topics, please return the status as unrelated.
-
+                If the email/job description is related to a job application, make sure to extract the company name, job position, and status of the email/job description, do not make as UNRELATED.
+             UNRELATED means that the email/job description does not reference a job description, job application, job offer, or job rejection.
              Return a JSON schema with the following keys: 
 
              {{
              
                 "company": **insert company name here**,
-                "job_position": **insert job position here**,
+                "job_position": **insert job position here**, # if not specified, return "N/A"
                 "summary": **insert summary here**
                 "status": **insert Enum One of: InReview, Interviewing, Offer, Rejected, Unrelated**
+
             }}
             """
     messages = [
@@ -47,11 +49,17 @@ async def email_summary(email:str) -> GPT_Email_Summary_Response:
         "json_schema": {"name": "email_schema", "schema": GPT_Email_Summary_Response.model_json_schema()}
     }
     
-    chat_response = await chat_client.call_async(messages=messages, response_format=response_format)
+    chat_response = await chat_client.call_async(
+                            messages=messages, 
+                            response_format=response_format, 
+                            temperature=0.0,
+                            max_tokens=1000,
+                    )
     msgs = chat_client.parse_response(chat_response)
     try: 
         # msg  =  string_to_json(msgs[-1])
         response = json.loads(msgs[-1])
+        logger.info("EMAIL SUMMARY RESPONSE", response)
     except Exception as e:
         logger.error("ERROR RESPONSE", e)
         raise SyntaxError("Response validation failed")

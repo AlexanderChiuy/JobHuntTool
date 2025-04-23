@@ -41,11 +41,23 @@ async def delete_user_info_from_db(user_id: str) -> bool:
             return True
         
 
-async def save_excel_job_row_to_db(user_id:str, company:str, position:str,sheet_row:int):
+async def save_excel_job_row_to_db(
+        user_id:str, 
+        company:str, 
+        position:str,
+        sheet_row:int,
+        email_id:str = None
+    ):
     async with aiosqlite.connect(DATABASE) as db:
         await db.execute(
-            "INSERT INTO user_jobs (user_id, company, position, sheet_row) VALUES (?, ?, ?, ?)",
-            (user_id, company, position,sheet_row)
+            """
+            INSERT INTO user_jobs 
+                (user_id, company, position, sheet_row, email_id) 
+                VALUES 
+                (?, ?, ?, ?,?)
+            """,
+            
+            (user_id, company, position,sheet_row,email_id)
         )
         await db.commit()
 
@@ -59,20 +71,47 @@ async def save_excel_job_row_to_db(user_id:str, company:str, position:str,sheet_
 #         )
 #         await db.commit()
 
-async def get_excel_job_row_from_db(user_id:str, company:str, position:str):
+async def get_excel_job_row_from_db(
+        user_id:str,
+        company:str, 
+        position:str,
+        email_id:str = None
+    ) -> int:
     async with aiosqlite.connect(DATABASE) as db:
         db.row_factory = aiosqlite.Row
-        async with db.execute("SELECT * FROM user_jobs WHERE user_id = ? AND company == ? AND position == ?", (user_id,company, position)) as cursor:
+        async with db.execute(
+            """
+            SELECT * FROM user_jobs 
+                WHERE user_id = ? 
+                    AND company == ? 
+                    AND position == ?
+                    AND (? IS NULL OR email_id = ?)
+            """, 
+            (user_id,company, position,email_id,email_id)
+        ) as cursor:
             row = await cursor.fetchone()
             if row is None:
                 return None
             return row["sheet_row"]
 
-async def does_excel_job_exist(user_id: str, company: str, position: str) -> bool:
+async def does_excel_job_exist(
+        user_id: str, 
+        company: str, 
+        position: str,
+        email_id: str = None
+    ) -> bool:
     async with aiosqlite.connect(DATABASE) as db:
         async with db.execute(
-            "SELECT EXISTS(SELECT 1 FROM user_jobs WHERE user_id = ? AND company = ? AND position = ?)",
-            (user_id, company, position)
+            """
+            SELECT EXISTS(
+            SELECT 1 FROM user_jobs 
+            WHERE user_id = ? 
+                AND company = ? 
+                AND position = ?
+                AND (? IS NULL OR email_id = ?)
+            )
+            """,
+            (user_id, company, position, email_id,email_id)
         ) as cursor:
             exists_value = await cursor.fetchone()
             # The EXISTS function returns 1 if the row exists, 0 otherwise.

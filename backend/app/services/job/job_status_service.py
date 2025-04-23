@@ -44,7 +44,8 @@ async def handle_crewai_response(
     user_id: str,
     authorization: str,
     excel_id: str,
-    row: int
+    row: int,
+    email_id: str = None
 ) -> None:
     logger.info(f"Row: {row}, Excel ID: {excel_id}")
     # 3) Update the sheet with the new row
@@ -65,14 +66,30 @@ async def handle_crewai_response(
         user_id=user_id,
         company=summary_json.company,
         position=summary_json.job_position,
-        sheet_row=row
+        sheet_row=row,
+        email_id=email_id
     )
 
 async def handle_in_review_or_interview(
     summary_json: GPT_Email_Summary_Response,
     user_id: str,
-    authorization: str
+    authorization: str,
+    email_id: str = None
 ) -> None:
+    
+    logger.debug(f"position: {summary_json.job_position}")
+    logger.debug(f"company: {summary_json.company}")
+    # check if there is a row already for this user 
+    logger.debug(f"email_id: {email_id}")
+    if await user_service.does_excel_job_exist(
+        user_id=user_id,
+        company=summary_json.company,
+        position=summary_json.job_position,
+        email_id=email_id
+    ):
+        logger.info("Job already exists in spreadsheet, SKIPPING...")
+        return 
+
     
     response:JobInformation = await handle_email_content(summary_json, user_id)
     # 2) Check if user has an existing sheet
@@ -91,14 +108,16 @@ async def handle_in_review_or_interview(
         user_id,
         authorization,
         excel_id,
-        row
+        row,
+        email_id=email_id
     )
     
 
 async def handle_offer_or_rejection(
     summary_json: GPT_Email_Summary_Response,
     user_id: str,
-    authorization: str
+    authorization: str,
+    email_id: str = None
 ) -> str:
     user_service_response = await user_service.get_user_excel_from_db(user_id=user_id)
     if not user_service_response:
@@ -108,7 +127,8 @@ async def handle_offer_or_rejection(
         row = await user_service.get_excel_job_row_from_db(
             user_id=user_id,
             company=summary_json.company,
-            position=summary_json.job_position
+            position=summary_json.job_position,
+            email_id=email_id
         )
 
     if row is None:

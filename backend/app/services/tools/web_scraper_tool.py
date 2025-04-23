@@ -60,4 +60,5 @@ class WebScrapperTool(BaseTool):
             website_contents.append(span_text_list)
 
         extracted_content = extract(content=website_contents)
+        print("extracted content: " , extracted_content)
         return extracted_content

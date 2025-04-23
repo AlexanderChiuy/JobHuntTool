@@ -112,12 +112,12 @@ class GPTChatCompletionClient(AzureAIClient):
         super().__init__(api, base_url, api_version=api_version, deployment_name=deployment_name, response_manager=response_manager)
         self.uri = f"{self.base_url}/openai/deployments/{self.deployment_name}/chat/completions?api-version={self.api_version}"
         
-    def prepare_payload(self, messages:List[Dict[str,str]],response_format:Dict = None, max_tokens:int = 300, choices:int = 1, temparture:float = 0.7, ):
+    def prepare_payload(self, messages:List[Dict[str,str]],response_format:Dict = None, max_tokens:int = 300, choices:int = 1, temperature:float = 0.7, ):
         return {
             "messages": messages,
             "max_tokens": max_tokens,
             "n": choices,
-            "temperature": temparture,
+            "temperature": temperature,
             "response_format": response_format
         }
 

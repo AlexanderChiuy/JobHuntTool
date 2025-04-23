@@ -32,6 +32,7 @@ async def init_db():
                 company TEXT NOT NULL,
                 position TEXT NOT NULL,
                 sheet_row INTEGER NOT NULL,
+                email_id TEST NULL,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             """
