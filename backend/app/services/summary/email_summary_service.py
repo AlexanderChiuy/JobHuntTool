@@ -71,5 +71,3 @@ async def email_summary(email:str) -> GPT_Email_Summary_Response:
         raise SyntaxError("Response validation failed")
     
     return response_format
-
-

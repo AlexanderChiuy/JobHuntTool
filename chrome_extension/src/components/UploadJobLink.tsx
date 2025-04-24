@@ -2,23 +2,38 @@ import { Send } from '@mui/icons-material';
 import LinkIcon from '@mui/icons-material/Link';
 import { Button } from '@mui/material';
 import { useState } from 'react';
-import { getAuthToken } from '../chrome/utils';
 
 const submitURL = async (url: string) => {
-  const token = await getAuthToken();
-  await fetch(
-      `http://127.0.0.1:8080/company/company-job-url-crew-ai`,
-      {
-          method: "POST",
-          body: JSON.stringify({
-            "job_post_url": url
-          }),
-          headers: {
-              "Content-Type": 'application/json',
-              "Authorization": `Bearer ${token}`
-          },
-      }
-  );
+  // Open the tab
+  chrome.tabs.create({ url }, async (tab) => {
+    // Wait for the tab to finish loading
+    const tabId = tab.id;
+
+    if (!tabId) return;
+
+    // Optional: poll until tab is ready
+    const waitForLoad = () =>
+      new Promise<void>((resolve) => {
+        const checkTab = () => {
+          chrome.tabs.get(tabId, (updatedTab) => {
+            if (updatedTab.status === "complete") {
+              resolve();
+            } else {
+              setTimeout(checkTab, 500);
+            }
+          });
+        };
+        checkTab();
+      });
+
+    await waitForLoad();
+
+    // Inject the script dynamically
+    chrome.scripting.executeScript({
+      target: { tabId },
+      files: ["js/scrapeScript.js"]
+    });
+  });
 }
 
 function UploadJobLink() {

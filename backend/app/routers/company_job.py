@@ -21,8 +21,8 @@ async def get_summary_email(req: Request, auth_data: dict = Depends(verify_googl
 async def handle_email_content(
         summary_json, 
         user_id: str, 
-        authorization: str,
-        email_id: str = None,
+        authorization: str, 
+        email_id: str = None
     ):
     match(summary_json.status): 
         case Status.IN_REVIEW | Status.INTERVIEWING:
@@ -37,7 +37,6 @@ async def handle_email_content(
         case _:
             raise HTTPException(status_code=500, detail="Response validation failed")
         
-
 @router.post("/company-job-info-crew-ai")
 async def get_company_job_info(req: Request, auth_data: dict = Depends(verify_google_token)):
     logger.info("INFO CREW AI CALLED")
@@ -58,10 +57,7 @@ async def get_company_job_url(req: Request, auth_data: dict = Depends(verify_goo
     body = await req.json()
     job_post_url = body.get("job_post_url")
     user_id = auth_data.get("email")
-    scraped_response = job_url_service.get_job_link_info(job_post_url)
     # Use job posting content as the "email"
-    summary_json: GPT_Email_Summary_Response = await email_summary_service.email_summary(scraped_response)
-    # Step 2: Process job application based on status using match-case
-    authorization = req.headers.get("authorization")
-    return await handle_email_content(summary_json, user_id, authorization, email_id=None)
+    summary_json: GPT_Email_Summary_Response = await email_summary_service.email_summary(job_post_url)
 
+    return await handle_email_content(summary_json, user_id, req.headers.get("authorization"))

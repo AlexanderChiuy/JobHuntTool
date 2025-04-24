@@ -46,6 +46,7 @@ module.exports = {
       patterns: [
         { from: "public/", to: "images/" },
         { from: "src/background.js", to: "background.js" },
+        { from: "src/scrapeScript.js", to: "scrapeScript.js" },
         // Removed: { from: "src/content.js", to: "content.js" },
         { from: "manifest.json", to: "../manifest.json" }
       ],
