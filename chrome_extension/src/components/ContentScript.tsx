@@ -1,4 +1,3 @@
-// src/components/ContentScript.ts
 import { getAuthToken } from "../chrome/utils";
 
 console.log("Content script loaded as module.");
@@ -63,13 +62,47 @@ const createButton = () => {
   spinner.style.borderRadius = '50%';
   spinner.style.animation = 'spin 0.8s linear infinite';
 
+  // Add tooltip container
+  const tooltipContainer = document.createElement('div');
+  tooltipContainer.className = "tooltip-container";
+  tooltipContainer.style.position = 'relative';
+  tooltipContainer.style.display = 'inline-block';
+  
+  // Create tooltip
+  const tooltip = document.createElement('div');
+  tooltip.className = "button-tooltip";
+  tooltip.textContent = "Check progress on the JobHunter Overview page";
+
   // Add text container
   const textSpan = document.createElement('span');
-  textSpan.textContent = 'Extract Job Details';
+  textSpan.textContent = 'Update Job Status';
   
   // Add elements to button
   button.appendChild(spinner);
   button.appendChild(textSpan);
+
+    // Style the tooltip
+    Object.assign(tooltip.style, {
+      position: 'absolute',
+      bottom: 'calc(100% + 8px)',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      background: 'white',
+      color: '#4a5568',
+      padding: '6px 10px',
+      borderRadius: '6px',
+      fontSize: '12px',
+      boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
+      width: 'max-content',
+      maxWidth: '300px',
+      textAlign: 'center',
+      zIndex: '1000',
+      opacity: '0',
+      visibility: 'hidden',
+      transition: 'opacity 0.2s, visibility 0.2s',
+      pointerEvents: 'none',
+      fontWeight: 'bold'
+    });
 
   // Style the button
   Object.assign(button.style, {
@@ -89,15 +122,29 @@ const createButton = () => {
       gap: '8px'
   });
 
-  // Add hover effect
+  // Add hover and focus effects
   button.addEventListener('mouseover', () => {
       button.style.background = '#4f46e5';
       button.style.color = 'white';
+      tooltip.style.opacity = '1';
+      tooltip.style.visibility = 'visible';
+  });
+
+  button.addEventListener('focus', () => {
+    tooltip.style.opacity = '1';
+    tooltip.style.visibility = 'visible';
   });
 
   button.addEventListener('mouseout', () => {
       button.style.background = 'transparent';
       button.style.color = '#4f46e5';
+      tooltip.style.opacity = '0';
+      tooltip.style.visibility = 'hidden';
+  });
+
+  button.addEventListener('blur', () => {
+    tooltip.style.opacity = '0';
+    tooltip.style.visibility = 'hidden';
   });
 
   // Add click handler with loading state
@@ -120,6 +167,8 @@ const createButton = () => {
       button.style.cursor = 'not-allowed';
       spinner.style.display = 'inline-block';
       textSpan.style.display = 'none';
+      tooltip.style.opacity = '0';
+      tooltip.style.visibility = 'hidden';
       
       // Simulate API call
       setTimeout(() => {
@@ -139,7 +188,10 @@ const createButton = () => {
           to { transform: rotate(360deg); }
       }
   `;
-  return button;
+
+  tooltipContainer.appendChild(tooltip);
+  tooltipContainer.appendChild(button);
+  return tooltipContainer;
 }
 
 /** Injects the "Fetch Email Summary" button after the email title */

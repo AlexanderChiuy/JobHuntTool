@@ -1,7 +1,7 @@
 import MainFrame from './components/MainFrame'
 import "./App.css";
 import { RootProvider } from './context/RootContext';
-import { getAuthToken, getUserEmail } from './chrome/utils';
+import { getAuthToken } from './chrome/utils';
 import { useEffect, useState } from 'react';
 import { UserInfo } from './helpers/types';
 

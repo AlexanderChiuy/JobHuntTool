@@ -4,6 +4,7 @@ import { Button } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import FileUploadInput from './FileUploadButton';
 import { getAuthToken } from '../chrome/utils';
+import SuccessPopup from './SuccessPopup';
 
 function UploadResume() {
   const [resume, setResume] = useState<File | null>(null);
@@ -51,6 +52,10 @@ function UploadResume() {
     }
   };
 
+  const handleCloseSuccess = () => {
+    setSuccess(false);
+  };
+
   return (
     <div className="flex flex-col items-center justify-center space-y-6 pt-12">
       <DescriptionIcon className="w-64 h-64 text-gray-400" />
@@ -76,7 +81,6 @@ function UploadResume() {
           </p>
         </div>
         {error && <p className="text-red-500">{error}</p>}
-        {success && <p className="text-green-500">Resume uploaded successfully!</p>}
         <Button
           type="submit"
           className="px-4 py-2 bg-blue-600 text-white rounded-lg"
@@ -86,6 +90,13 @@ function UploadResume() {
           {loading ? 'Uploading...' : 'Upload Resume'}
         </Button>
       </form>
+
+      <SuccessPopup
+        open={success}
+        message="Resume uploaded successfully!"
+        onClose={handleCloseSuccess}
+        duration={6000}
+      />
     </div>
   );
 }

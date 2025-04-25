@@ -2,6 +2,7 @@ import { Send } from '@mui/icons-material';
 import LinkIcon from '@mui/icons-material/Link';
 import { Button } from '@mui/material';
 import { useState } from 'react';
+import SuccessPopup from './SuccessPopup';
 
 const submitURL = async (url: string) => {
   // Open the tab
@@ -38,13 +39,18 @@ const submitURL = async (url: string) => {
 
 function UploadJobLink() {
     const [inputValue, setInputValue] = useState('');
+    const [success, setSuccess] = useState(false);
 
     const handleSubmit = (e: React.FormEvent) =>{
-        console.log('Submitting...');
         e.preventDefault();
         submitURL(inputValue);
         setInputValue('');
+        setSuccess(true);
     };
+
+    const handleCloseSuccess = () => {
+      setSuccess(false);
+    }
 
     return (
         <div className="flex flex-col items-center justify-center space-y-6 pt-12">
@@ -59,25 +65,33 @@ function UploadJobLink() {
           </div>
 
           <div className="w-full max-w-md">
-                <form onSubmit={handleSubmit} className="flex gap-2">
-                  <div className="flex-1 relative">
-                      <input
-                      type="text"
-                      value={inputValue}
-                      onChange={(e) => setInputValue(e.target.value)}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      placeholder="Input Job posting URL..."
-                      />
+                <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+                  <div className="flex">
+                    <div className="flex-1 relative flex-row">
+                        <input
+                        type="text"
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        placeholder="Input Job posting URL..."
+                        />
+                    </div>
+                    <Button
+                        type="submit" 
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                        endIcon={<Send />}
+                    >
+                        <span>Upload</span>
+                    </Button>
                   </div>
-                  <Button
-                      type="submit" 
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg"
-                      endIcon={<Send />}
-                  >
-                      <span>Upload</span>
-                  </Button>
                 </form>
           </div>
+          <SuccessPopup
+            open={success}
+            message="URL uploaded successfully!"
+            onClose={handleCloseSuccess}
+            duration={6000}
+          />
         </div>
     );
 }
